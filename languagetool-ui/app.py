@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import errno
 import os
+import re
 import subprocess
 import time
 import urllib.error
@@ -219,6 +220,16 @@ def api_is_ready() -> bool:
         return False
 
 
+def utf16_to_index(text: str, offset: int) -> int:
+    """Convert LanguageTool's UTF-16 offset to a Python string index."""
+    consumed = 0
+    for index, char in enumerate(text):
+        if consumed >= offset:
+            return index
+        consumed += 2 if ord(char) > 0xFFFF else 1
+    return len(text)
+
+
 def start_languagetool_if_needed() -> subprocess.Popen | None:
     if api_is_ready():
         return None
@@ -326,14 +337,50 @@ class Handler(BaseHTTPRequestHandler):
                 result = json.loads(response.read())
             if SUPPLEMENTAL_COMMA_RULES:
                 matches = result.get("matches", [])
-                for candidate in check_supplemental_commas(text):
-                    offset = candidate["offset"]
-                    already_reported = any(
-                        item.get("offset", -1) <= offset
-                        <= item.get("offset", -1) + item.get("length", 0)
-                        for item in matches
+                local_candidates = check_supplemental_commas(text)
+                # LanguageTool sometimes calls the finite verb before «aber» a
+                # duplicate when the sentence is actually a comma splice.
+                filtered = []
+                for item in matches:
+                    offset = utf16_to_index(text, item.get("offset", 0))
+                    end = utf16_to_index(text, item.get("offset", 0) + item.get("length", 0))
+                    rule_id = item.get("rule", {}).get("id", "")
+                    marked_text = text[offset:end]
+                    context_before = text[max(0, offset - 45):offset]
+                    context_after = text[end:min(len(text), end + 120)]
+                    is_false_duplicate = (
+                        rule_id == "DOPPELTES_VERB"
+                        and marked_text.lower() == "ist"
+                        and re.match(r"\s+aber\b", text[end:], re.IGNORECASE) is not None
                     )
-                    if not already_reported:
+                    is_vocative_case = (
+                        rule_id == "DE_CASE"
+                        and marked_text.lower() == "kleiner"
+                        and re.search(r",\s*$", context_before)
+                        and re.match(r"\s*,", context_after)
+                    )
+                    if not (is_false_duplicate or is_vocative_case):
+                        filtered.append(item)
+                matches = filtered
+                for candidate in local_candidates:
+                    offset = candidate["offset"]
+                    length = candidate.get("length", 0)
+                    existing = next((
+                        item for item in matches
+                        if item.get("offset", -1) == offset
+                        and item.get("length", 0) == length
+                    ), None)
+                    if existing:
+                        suggestions = existing.setdefault("replacements", [])
+                        for preferred in candidate.get("replacements", []):
+                            value = preferred.get("value")
+                            current = next((entry for entry in suggestions if entry.get("value") == value), None)
+                            if current:
+                                suggestions.remove(current)
+                            else:
+                                current = preferred
+                            suggestions.insert(0, current)
+                    else:
                         matches.append(candidate)
                 matches.sort(key=lambda item: (item.get("offset", 0), item.get("length", 0)))
                 result["matches"] = matches
