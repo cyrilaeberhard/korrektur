@@ -32,4 +32,9 @@ handoff/
 !hf-space/server.py
 !hf-space/start.sh
 !hf-space/supplemental_grammar.py
+!oracle/
+!oracle/docker-compose.yml
+!oracle/Caddyfile
+!oracle/setup.sh
+!oracle/.env.example
 FEHLERLOG.md

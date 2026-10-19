@@ -1,0 +1,23 @@
+services:
+  api:
+    build: ../hf-space
+    restart: unless-stopped
+    environment:
+      API_KEY: ${API_KEY:?API_KEY in .env setzen}
+    expose:
+      - "7860"
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN in .env setzen}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+volumes:
+  caddy_data:
