@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(osascript -l JavaScript .claude/korrektur.js:*)",
+      "Bash(osascript -l JavaScript .claude/test_korrektur.js)",
+      "Bash(osascript -l JavaScript .claude/vergleich.js:*)",
+      "Bash(osascript -l JavaScript .claude/languagetool.js:*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File .claude/korrektur.ps1:*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File .claude/test_korrektur.ps1)"
+    ]
+  }
+}

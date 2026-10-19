@@ -1,0 +1,29 @@
+# Nur das Setup ins Repo, nie Schülertexte oder sonstige Dateien.
+# Alles ignorieren, dann gezielt freigeben.
+*
+!.gitignore
+!README.md
+!CLAUDE.md
+!.claude/
+!.claude/settings.json
+!.claude/korrektur.js
+!.claude/test_korrektur.js
+!.claude/korrektur.ps1
+!.claude/test_korrektur.ps1
+!.claude/agents/
+!.claude/agents/korrektur-leser.md
+!.claude/agents/korrektur-pruefer.md
+!.claude/agents/korrektur-komma.md
+!.claude/agents/korrektur-tempus.md
+!.claude/regeln/
+!.claude/regeln/komma.md
+!.claude/regeln/tempus.md
+!.claude/regeln/schweiz.md
+!.claude/vergleich.js
+!.claude/languagetool.js
+!languagetool-ui/
+!languagetool-ui/app.py
+!languagetool-ui/supplemental_grammar.py
+!languagetool-ui/start.command
+handoff/
+FEHLERLOG.md
